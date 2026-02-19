@@ -9,9 +9,22 @@ args = parser.parse_args()
 def url_scan(url: str, directory: str):
     try:
         req = requests.get(f'{url}/{directory}',timeout=2)
-        req.raise_for_status()
         if req.status_code == 200:
             return f"[OK] Diretório encontrado: {req.url}"
+        
+        elif req.status_code in (301, 302):
+            return f"[REDIRECT][{req.status_code}] Diretório: {directory} -> {req.headers.get('Location')}"
+
+        elif req.status_code == 403:
+            return f"[PROIBIDO][403] Diretório existe mas acesso negado: {directory}"
+
+        elif req.status_code >= 500:
+            return f"[ERRO SERVIDOR][{req.status_code}] Diretório: {directory}"
+
+        # 404 e outros códigos comuns são ignorados
+        else:
+            return None
+
     except requests.exceptions.Timeout as erro:
         return f"[ERRO] [TIMEOUT] Diretório: {directory} -  {erro}"
     except requests.exceptions.ConnectionError as erro:
